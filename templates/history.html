@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100" data-bs-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <title>Measurement History</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
+  <script src="static/libs/plotly-latest.min.js"></script>
+
+</head>
+
+<body class="d-flex flex-column h-100 text-center text-bg-dark">
+  <nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">Main</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
+        aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        <div class="navbar-nav">
+          <a class="nav-link" href="/history">DB History</a>
+          <a class="nav-link" href="/fileview">File History</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5 flex-grow-1 w-100">
+    <h1 class="mb-4">View Measurement History</h1>
+    <form method="post" class="row g-3 mb-5">
+      <div class="col-auto">
+        <label for="id" class="col-form-label">Record ID:</label>
+      </div>
+      <div class="col-auto">
+        <input type="number" name="id" id="id" class="form-control"
+          value="{{ record.id if record and record.id is defined else '' }}" required>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary mb-3">Load</button>
+      </div>
+    </form>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    {% if record %}
+    <div class="mb-3">
+      <p><strong>Period:</strong> {{ record.start }} to {{ record.end }}</p>
+    </div>
+
+    <div class="row">
+      <div id="chart"></div>
+    </div>
+    {% endif %}
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
+  crossorigin="anonymous"></script>
+  <script>
+    {% if record %}
+    const dataArr = JSON.parse({{ record.data | tojson | safe }});
+    console.log(dataArr);
+
+    const xs = dataArr.map(o => new Date(o.ts)),
+      ysT = dataArr.map(o => o.temp),
+      ysH = dataArr.map(o => o.hum);
+
+    Plotly.newPlot('chart', [
+      { x: xs, y: ysT, mode: 'lines', name: 'Temperature (°C)' },
+      { x: xs, y: ysH, mode: 'lines', name: 'Humidity (%)' }
+    ], {
+      title: 'Temperature & Humidity over Time',
+      xaxis: { title: 'Time', type: 'date' },
+      yaxis: { title: 'Value' },
+      autosize: true,
+      template: 'plotly_dark',
+      paper_bgcolor: '#1e1e1e52',
+      plot_bgcolor: '#1e1e1e52', 
+      font: { color: '#e0e0e0' },
+      xaxis: {
+        title: 'Time',
+        color: '#e0e0e0',
+        gridcolor: '#333',
+        zerolinecolor: '#444'
+      },
+      yaxis: {
+        title: 'Value',
+        color: '#e0e0e0',
+        gridcolor: '#333',
+        zerolinecolor: '#444'
+      }
+    }, {
+      responsive: true
+    });
+
+    window.onresize = function () {
+      Plotly.Plots.resize(document.getElementById('chart'));
+    };
+    {% endif %}
+  </script>
+</body>
+
+</html>
